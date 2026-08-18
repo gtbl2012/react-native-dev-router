@@ -1,0 +1,41 @@
+{
+  "name": "react-native-dev-router",
+  "version": "0.1.0",
+  "description": "Multi-instance React Native dev server router: auto port allocation, a global runner daemon, an 8081 proxy to the active server, and a macOS menu bar switcher",
+  "type": "module",
+  "bin": {
+    "react-native-dev-router": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "glimpseui": "^0.8.1"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gtbl2012/react-native-dev-router.git"
+  },
+  "homepage": "https://github.com/gtbl2012/react-native-dev-router#readme",
+  "bugs": {
+    "url": "https://github.com/gtbl2012/react-native-dev-router/issues"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.2.0",
+    "eslint": "^10.8.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0"
+  }
+}

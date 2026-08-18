@@ -1,0 +1,65 @@
+name: Release
+
+# Merging (pushing) to the release branch tags v{package.json version} and
+# publishes to npm. Re-pushing the same version is a no-op (tag already exists).
+# Requires the NPM_TOKEN repository secret (npm automation token).
+on:
+  push:
+    branches: [release]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so existing tags are visible
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # --ignore-scripts skips glimpseui's native postinstall build (not needed
+      # to compile/publish this package); our own build runs explicitly below.
+      - run: npm ci --ignore-scripts
+
+      - run: npm run check
+
+      - run: npm run build
+
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether v${{ steps.version.outputs.version }} already exists
+        id: tag
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.version.outputs.version }} already exists — bump the version in package.json to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.tag.outputs.exists == 'false'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Tag only after a successful publish so a failed publish can be retried
+      # by re-running the workflow.
+      - name: Tag and create GitHub Release
+        if: steps.tag.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --generate-notes
