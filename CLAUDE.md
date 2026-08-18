@@ -133,8 +133,14 @@ node dist/bin.js runner status && node dist/bin.js runner stop
 ## 陷阱
 
 - glimpseui 的 postinstall 用 `swiftc` 编译原生二进制，需要 Xcode Command Line Tools；
-  编译失败不报错只警告，此时 statusbar 走 headless 降级路径。
+  编译失败不报错只警告。兜底：npm 包里带了 CI 编译的 universal 预编译二进制（`native/glimpse`，
+  release.yml 的 build-glimpse job 产出，本地 gitignore），runner 启动时若发现 glimpseui
+  的二进制缺失会把预编译版复制过去（statusbar.ts）。**不能用 `GLIMPSE_BINARY_PATH` env
+  override**——glimpseui 的 `statusItem()` 会拒绝 platform 'override'（上游疏漏），所以只能
+  复制到它期望的路径。两者都失败才走 headless 降级。
   验证：`node -e "import('glimpseui').then(m=>console.log(m.getNativeHostInfo()))"`。
+- glimpseui 版本是精确锁定（无 `^`）：预编译二进制必须和 JS 侧协议匹配。升级 glimpseui
+  时 CI 会自动重编，但要人工确认协议兼容、并手测一次菜单栏。
 - `statusItem()` 仅 macOS，其他平台直接 throw（statusbar.ts 已 catch）。
 - daemon 是 detached 后台进程，stdout/stderr 全在 `~/.react-native-dev-router/runner.log`，
   终端里看不到。

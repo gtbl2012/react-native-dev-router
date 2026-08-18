@@ -15,12 +15,51 @@ permissions:
   id-token: write # mint the OIDC token npm exchanges for publish credentials
 
 jobs:
+  # Universal (arm64 + x86_64) build of glimpseui's menu bar binary, bundled
+  # into the npm package so users without Xcode CLT still get the ⚛ indicator.
+  # glimpseui is pinned exactly in package.json — bumping it rebuilds this
+  # automatically, but check the JS<->binary protocol still matches.
+  build-glimpse:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: npm ci --ignore-scripts
+
+      - name: Build universal glimpse binary
+        run: |
+          SRC=node_modules/glimpseui/src/glimpse.swift
+          swiftc -O -target arm64-apple-macos12 "$SRC" -o glimpse-arm64
+          swiftc -O -target x86_64-apple-macos12 "$SRC" -o glimpse-x64
+          mkdir -p native
+          lipo -create -output native/glimpse glimpse-arm64 glimpse-x64
+          lipo -archs native/glimpse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: glimpse-universal
+          path: native/glimpse
+          if-no-files-found: error
+
   release:
+    needs: build-glimpse
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full history so existing tags are visible
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: glimpse-universal
+          path: native
+
+      # upload-artifact strips the executable bit; restore it before packing.
+      - run: chmod 755 native/glimpse
 
       - uses: actions/setup-node@v4
         with:

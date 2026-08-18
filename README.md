@@ -21,7 +21,11 @@ A Metro router for developing several React Native projects at the same time (ma
 
 - macOS (the menu bar indicator is macOS-only; everything else degrades gracefully headless)
 - Node.js ≥ 22.12
-- Xcode Command Line Tools (compiles the native menu bar component of [glimpseui](https://github.com/hazat/glimpse) at install time)
+
+No Xcode required: a prebuilt universal (arm64 + x86_64) menu bar binary ships
+with the package. If Xcode Command Line Tools are present, the
+[glimpseui](https://github.com/hazat/glimpse) component is compiled locally at
+install time and used instead.
 
 ## Install
 

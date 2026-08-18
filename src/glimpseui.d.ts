@@ -31,4 +31,9 @@ declare module 'glimpseui' {
   /** macOS only — throws on Linux and Windows. */
   export function statusItem(html: string, options?: GlimpseOptions): GlimpseStatusItem;
   export function open(html: string, options?: GlimpseOptions): GlimpseWindow;
+  /**
+   * Resolved native binary path (honors GLIMPSE_BINARY_PATH/GLIMPSE_HOST_PATH
+   * env overrides). Throws on unsupported platforms.
+   */
+  export function getNativeHostInfo(): { path: string; platform: string; buildHint?: string };
 }

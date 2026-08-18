@@ -21,7 +21,10 @@
 
 - macOS（菜单栏指示器仅 macOS；其余功能在无 UI 时自动降级）
 - Node.js ≥ 22.12
-- Xcode Command Line Tools（安装时编译 [glimpseui](https://github.com/hazat/glimpse) 的菜单栏原生组件）
+
+无需安装 Xcode：包内自带预编译的 universal（arm64 + x86_64）菜单栏二进制。如果机器上有
+Xcode Command Line Tools，安装时会现场编译 [glimpseui](https://github.com/hazat/glimpse)
+组件并优先使用。
 
 ## 安装
 

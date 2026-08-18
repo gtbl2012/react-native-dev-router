@@ -1,7 +1,13 @@
 // macOS menu bar indicator built on glimpseui's statusItem (WKWebView popover).
 // Degrades gracefully: if glimpseui or its native binary is unavailable (other
 // platforms, skipped build), the runner keeps working headless.
-import { type GlimpseStatusItem, type statusItem as statusItemFn } from 'glimpseui';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import {
+  type GlimpseStatusItem,
+  type statusItem as statusItemFn,
+  type getNativeHostInfo as getNativeHostInfoFn,
+} from 'glimpseui';
 import { type UiState } from '../types.js';
 import { errMsg } from '../util.js';
 
@@ -118,11 +124,33 @@ export async function createStatusBar(opts: StatusBarOptions): Promise<StatusBar
   const { getState, onActivate, onClose, onShutdown, log } = opts;
 
   let statusItem: typeof statusItemFn;
+  let getNativeHostInfo: typeof getNativeHostInfoFn;
   try {
-    ({ statusItem } = await import('glimpseui'));
+    ({ statusItem, getNativeHostInfo } = await import('glimpseui'));
   } catch (err) {
     log(`statusbar: glimpseui unavailable, running headless (${errMsg(err)})`);
     return null;
+  }
+
+  // glimpseui compiles its binary at install time (needs Xcode CLT); when that
+  // was skipped, install the prebuilt universal binary bundled with this
+  // package (built in CI) into the path glimpseui expects. The GLIMPSE_BINARY_PATH
+  // env override is NOT usable here: statusItem() rejects platform 'override'.
+  try {
+    const envOverride = process.env['GLIMPSE_BINARY_PATH'] ?? process.env['GLIMPSE_HOST_PATH'];
+    if (process.platform === 'darwin' && envOverride === undefined) {
+      const hostPath = getNativeHostInfo().path;
+      if (!fs.existsSync(hostPath)) {
+        const bundled = fileURLToPath(new URL('../../native/glimpse', import.meta.url));
+        if (fs.existsSync(bundled)) {
+          fs.copyFileSync(bundled, hostPath);
+          fs.chmodSync(hostPath, 0o755);
+          log(`statusbar: local glimpse binary missing, installed bundled prebuilt to ${hostPath}`);
+        }
+      }
+    }
+  } catch (err) {
+    log(`statusbar: could not install bundled glimpse binary (${errMsg(err)})`);
   }
 
   let item: GlimpseStatusItem | null = null;
