@@ -2,7 +2,7 @@
 export interface ServerInfo {
   /** Registry key — the start client's pid as a string. */
   id: string;
-  /** Project display name (package.json name or directory basename). */
+  /** Session display name (-n/--name override, else package.json name or directory basename). */
   name: string;
   /** Project root the client was started from. */
   cwd: string;

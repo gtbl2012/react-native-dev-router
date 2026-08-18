@@ -7,10 +7,15 @@ const { version } = createRequire(import.meta.url)('../package.json') as { versi
 const HELP = `react-native-dev-router v${version}
 
 Usage:
-  react-native-dev-router start [...react-native start args]
+  react-native-dev-router start [-n <name>] [...react-native start args]
       Start this project's Metro on a free port after 10000, register it with
       the global runner, and (if active) serve it through the :8081 proxy.
-      All arguments are passed through to \`react-native start\`.
+      All other arguments are passed through to \`react-native start\`.
+
+      -n, --name <name>   Display name for this session in the menu bar and
+                          \`runner status\` (default: package.json name). Handy
+                          when multiple coding agents run sessions of the same
+                          project. Not passed through to react-native.
 
   react-native-dev-router runner <start|stop|restart|status>
       Control the global singleton runner daemon (proxy + menu bar indicator).

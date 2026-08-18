@@ -15,6 +15,10 @@ react-native-dev-router runner start|stop|restart|status
 向 runner 预注册 → 用项目本地的 `node_modules/.bin/react-native start --port <port>` 启动
 （stdio inherit，日志直接可见）。用户显式传 `--port` 时跳过探测。
 
+`start` 自己消费两个选项（不透传）：`--port/-p`（指定端口）、`--name/-n`（session 显示名，
+默认取项目 package.json 的 name；给 coding agent 区分同项目多 session 用）。其余参数
+原样透传给 `react-native start`。
+
 ## 开发命令
 
 ```bash

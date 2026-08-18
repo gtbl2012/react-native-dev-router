@@ -27,6 +27,9 @@ react-native-dev-router start                 # 第一个项目：自动拉起 r
 cd ../another-rn-app
 react-native-dev-router start --reset-cache   # 第二个项目：分到 10002，待机；参数透传
 
+react-native-dev-router start -n agent-fix-login   # 给 session 命名（菜单栏/status 中显示），
+                                                   # 适合多个 coding agent 各起一个 session
+
 react-native-dev-router runner status         # 查看 runner 和所有已注册 server
 react-native-dev-router runner stop           # 停 runner（不影响已在跑的 Metro）
 react-native-dev-router runner restart

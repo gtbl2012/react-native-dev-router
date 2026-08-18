@@ -20,8 +20,8 @@ export async function startCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  const { userPort, rest } = extractPort(args);
-  const name = projectName(cwd);
+  const { userPort, sessionName, rest } = parseStartArgs(args);
+  const name = sessionName ?? projectName(cwd);
 
   const { info, spawned } = await ensureRunner();
   console.log(
@@ -105,23 +105,44 @@ export async function startCommand(args: string[]): Promise<void> {
   });
 }
 
-/** Honor a user-supplied --port/-p instead of auto-detecting. */
-function extractPort(args: string[]): { userPort: number | null; rest: string[] } {
+interface StartArgs {
+  userPort: number | null;
+  /** -n/--name: session display name override (menu bar + runner status). */
+  sessionName: string | null;
+  /** Everything else, passed through to `react-native start`. */
+  rest: string[];
+}
+
+/**
+ * Consume the options that belong to this tool (--port/-p to honor a
+ * user-chosen port, -n/--name to label the session — useful when several
+ * coding agents run sessions of the same project); pass the rest through.
+ */
+function parseStartArgs(args: string[]): StartArgs {
   const rest: string[] = [];
   let userPort: number | null = null;
+  let sessionName: string | null = null;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === undefined) break;
     if (arg === '--port' || arg === '-p') {
-      const next = args[++i];
-      userPort = toPort(next);
+      userPort = toPort(args[++i]);
     } else if (arg.startsWith('--port=')) {
       userPort = toPort(arg.slice('--port='.length));
+    } else if (arg === '--name' || arg === '-n') {
+      sessionName = toSessionName(args[++i]);
+    } else if (arg.startsWith('--name=')) {
+      sessionName = toSessionName(arg.slice('--name='.length));
     } else {
       rest.push(arg);
     }
   }
-  return { userPort, rest };
+  return { userPort, sessionName, rest };
+}
+
+function toSessionName(raw: string | undefined): string | null {
+  const trimmed = raw?.trim() ?? '';
+  return trimmed === '' ? null : trimmed;
 }
 
 function toPort(raw: string | undefined): number | null {
