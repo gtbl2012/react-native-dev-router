@@ -1,6 +1,6 @@
 {
   "name": "react-native-dev-router",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Multi-instance React Native dev server router: auto port allocation, a global runner daemon, an 8081 proxy to the active server, and a macOS menu bar switcher",
   "type": "module",
   "bin": {
