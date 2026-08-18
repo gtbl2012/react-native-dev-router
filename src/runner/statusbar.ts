@@ -26,6 +26,15 @@ export interface StatusBarOptions {
   log: (msg: string) => void;
 }
 
+function sameFile(a: string, b: string): boolean {
+  try {
+    if (fs.statSync(a).size !== fs.statSync(b).size) return false;
+    return fs.readFileSync(a).equals(fs.readFileSync(b));
+  } catch {
+    return false; // b missing or unreadable — treat as different
+  }
+}
+
 type UiMessage = { action: 'shutdown' } | { action: 'activate' | 'close'; id: string };
 
 function parseUiMessage(raw: unknown): UiMessage | null {
@@ -132,21 +141,27 @@ export async function createStatusBar(opts: StatusBarOptions): Promise<StatusBar
     return null;
   }
 
-  // glimpseui compiles its binary at install time (needs Xcode CLT); when that
-  // was skipped, install the prebuilt universal binary bundled with this
-  // package (built in CI) into the path glimpseui expects. The GLIMPSE_BINARY_PATH
-  // env override is NOT usable here: statusItem() rejects platform 'override'.
+  // Prefer the prebuilt universal binary bundled with this package (built and
+  // verified in CI) over whatever glimpseui's postinstall compiled locally, so
+  // every install runs the same artifact. Falls back to the locally compiled
+  // binary when no bundle is present (e.g. a git checkout — native/ only
+  // exists in released packages) or with RN_DEV_ROUTER_PREFER_LOCAL_GLIMPSE=1
+  // (debugging a locally patched glimpse.swift). The GLIMPSE_BINARY_PATH env
+  // override is not usable instead: glimpseui's statusItem() rejects platform
+  // 'override'.
   try {
     const envOverride = process.env['GLIMPSE_BINARY_PATH'] ?? process.env['GLIMPSE_HOST_PATH'];
-    if (process.platform === 'darwin' && envOverride === undefined) {
+    const preferLocal = process.env['RN_DEV_ROUTER_PREFER_LOCAL_GLIMPSE'] === '1';
+    if (process.platform === 'darwin' && envOverride === undefined && !preferLocal) {
       const hostPath = getNativeHostInfo().path;
-      if (!fs.existsSync(hostPath)) {
-        const bundled = fileURLToPath(new URL('../../native/glimpse', import.meta.url));
-        if (fs.existsSync(bundled)) {
-          fs.copyFileSync(bundled, hostPath);
-          fs.chmodSync(hostPath, 0o755);
-          log(`statusbar: local glimpse binary missing, installed bundled prebuilt to ${hostPath}`);
-        }
+      const bundled = fileURLToPath(new URL('../../native/glimpse', import.meta.url));
+      if (fs.existsSync(bundled) && !sameFile(bundled, hostPath)) {
+        // Atomic swap — never truncate a binary a leftover process may be running.
+        const tmp = `${hostPath}.tmp-${String(process.pid)}`;
+        fs.copyFileSync(bundled, tmp);
+        fs.chmodSync(tmp, 0o755);
+        fs.renameSync(tmp, hostPath);
+        log(`statusbar: installed bundled glimpse binary to ${hostPath}`);
       }
     }
   } catch (err) {

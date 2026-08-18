@@ -22,10 +22,9 @@ A Metro router for developing several React Native projects at the same time (ma
 - macOS (the menu bar indicator is macOS-only; everything else degrades gracefully headless)
 - Node.js ≥ 22.12
 
-No Xcode required: a prebuilt universal (arm64 + x86_64) menu bar binary ships
-with the package. If Xcode Command Line Tools are present, the
-[glimpseui](https://github.com/hazat/glimpse) component is compiled locally at
-install time and used instead.
+No Xcode required: the menu bar component ([glimpseui](https://github.com/hazat/glimpse))
+ships as a prebuilt universal (arm64 + x86_64) binary, built and verified in CI —
+every install runs the same artifact.
 
 ## Install
 
@@ -92,6 +91,7 @@ servers — they re-register automatically the next time the runner starts.
 |---|---|---|
 | `RN_DEV_ROUTER_RUNNER_PORT` | 8790 | runner control API port (localhost only) |
 | `RN_DEV_ROUTER_PROXY_PORT` | 8081 | proxy port |
+| `RN_DEV_ROUTER_PREFER_LOCAL_GLIMPSE` | — | set to `1` to use a locally compiled glimpse binary instead of the bundled prebuilt (debugging) |
 
 Logs and state live in `~/.react-native-dev-router/` (`runner.log` is the place
 to look when something is off).

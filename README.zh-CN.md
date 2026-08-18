@@ -22,9 +22,8 @@
 - macOS（菜单栏指示器仅 macOS；其余功能在无 UI 时自动降级）
 - Node.js ≥ 22.12
 
-无需安装 Xcode：包内自带预编译的 universal（arm64 + x86_64）菜单栏二进制。如果机器上有
-Xcode Command Line Tools，安装时会现场编译 [glimpseui](https://github.com/hazat/glimpse)
-组件并优先使用。
+无需安装 Xcode：菜单栏组件（[glimpseui](https://github.com/hazat/glimpse)）以 CI 编译并
+验证过的 universal（arm64 + x86_64）预编译二进制随包分发 —— 所有安装运行同一份产物。
 
 ## 安装
 
@@ -90,6 +89,7 @@ cd ../app-two && react-native-dev-router start       # :10002，待机
 |---|---|---|
 | `RN_DEV_ROUTER_RUNNER_PORT` | 8790 | runner 控制 API 端口（仅 localhost） |
 | `RN_DEV_ROUTER_PROXY_PORT` | 8081 | 代理端口 |
+| `RN_DEV_ROUTER_PREFER_LOCAL_GLIMPSE` | — | 设为 `1` 时使用本地编译的 glimpse 二进制而非包内预编译版（调试用） |
 
 日志与状态在 `~/.react-native-dev-router/`（排查问题先看 `runner.log`）。
 
