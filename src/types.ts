@@ -2,8 +2,14 @@
 export interface ServerInfo {
   /** Registry key — the start client's pid as a string. */
   id: string;
-  /** Session display name (-n/--name override, else package.json name or directory basename). */
+  /** Session display name (rename > -n/--name > package.json name > directory basename). */
   name: string;
+  /**
+   * Name set via the rename API, or null. Kept separately so the client's
+   * heartbeat re-registration (which carries the original name) does not
+   * clobber a rename.
+   */
+  customName: string | null;
   /** Project root the client was started from. */
   cwd: string;
   /** Port Metro is listening on. */

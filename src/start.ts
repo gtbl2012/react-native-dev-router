@@ -70,6 +70,12 @@ export async function startCommand(inv: StartInvocation): Promise<void> {
         ? ` — active, proxied at :${String(PROXY_PORT)}`
         : ' — standby (switch via the ⚛ menu bar item)'),
   );
+  if (sessionName === null) {
+    console.log(
+      `[rn-dev-router] this session is unnamed — give it a meaningful name anytime with:\n` +
+        `[rn-dev-router]   react-native-dev-router rename <name> --id ${String(process.pid)}`,
+    );
+  }
 
   const child = spawn(rnBin, ['start', '--port', String(metroPort), ...rest], {
     cwd,

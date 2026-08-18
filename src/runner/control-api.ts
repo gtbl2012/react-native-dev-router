@@ -82,6 +82,15 @@ async function handle(opts: ControlApiOptions, req: http.IncomingMessage, res: h
         send(200, { activeId: registry.activeId });
         return;
       }
+      case 'POST /api/rename': {
+        const name = (body as { name?: unknown } | null)?.name;
+        if (typeof name !== 'string' || name.trim() === '') {
+          send(400, { error: 'non-empty name required' });
+          return;
+        }
+        send(200, { ok: true, server: registry.rename(idOf(body), name.trim()) });
+        return;
+      }
       case 'POST /api/close': {
         const target = registry.servers.get(idOf(body));
         if (!target) {

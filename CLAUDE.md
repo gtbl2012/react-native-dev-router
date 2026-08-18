@@ -8,6 +8,7 @@ macOS 上的多实例 React Native dev server 路由工具。让多个 RN 项目
 
 ```bash
 react-native-dev-router start [...args]   # 在 RN 项目内运行；args 全部透传给 react-native start
+react-native-dev-router rename <name> [--id <pid>|--port <port>]   # 给运行中的 session 改名
 react-native-dev-router runner start|stop|restart|status
 ```
 
@@ -58,7 +59,7 @@ start 客户端 (每个项目一个)                 runner 守护进程 (全局
 - **单例机制**：daemon 对控制端口 exclusive bind；第二个 daemon 绑定失败后 ping 确认已有
   runner 存活就退出。没有锁文件。
 - **control-api.ts**：仅监听 127.0.0.1。`GET /api/ping|servers`，
-  `POST /api/register|unregister|activate|close|shutdown`。
+  `POST /api/register|unregister|activate|rename|close|shutdown`。
 - **proxy.ts**：TCP 层转发（`net` 直接 pipe），HTTP 和 WebSocket（Metro 的 HMR/inspector）
   天然透传。8081 被占（比如手动跑的 Metro）时每 5s 重试，占用者退出后自动接管。
 - **registry.ts**：以 start 客户端 pid 为 key 的 upsert。`preferredKey`（`cwd#port`）持久化到
@@ -71,6 +72,8 @@ start 客户端 (每个项目一个)                 runner 守护进程 (全局
 
 1. **注册即心跳**：客户端每 4s 重新 POST /api/register（按 pid upsert）。因此 runner
    重启后无需任何恢复逻辑，注册表几秒内自动重建。不要给 register 加副作用。
+   rename 存进条目的 `customName`，register upsert 时 `customName` 优先于心跳带来的
+   name——否则改名会在 4s 内被心跳打回。改名不跨 session 持久（客户端重启即失效）。
 2. **先注册后启动 Metro**：端口冲突由 runner 仲裁（活着的条目占用同端口 → 409，客户端重扫）。
    两个项目并发 start 不会拿到同一个端口。
 3. **close = 给客户端 pid 发 SIGTERM**：runner 不直接管 Metro 进程。客户端 trap SIGTERM →

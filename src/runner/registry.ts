@@ -53,7 +53,9 @@ export class Registry extends EventEmitter<{ change: [] }> {
     const existing = this.servers.get(id);
     const server: ServerInfo = {
       id,
-      name: req.name,
+      // A rename wins over whatever name the heartbeat keeps re-sending.
+      name: existing?.customName ?? req.name,
+      customName: existing?.customName ?? null,
       cwd: req.cwd,
       port: req.port,
       pid: req.pid,
@@ -93,6 +95,18 @@ export class Registry extends EventEmitter<{ change: [] }> {
     if (this.activeId === id) return;
     this.applyActive(id, { remember: true });
     this.emit('change');
+  }
+
+  /** Rename a session; survives the client's heartbeat re-registration. */
+  rename(id: string, name: string): ServerInfo {
+    const server = this.servers.get(id);
+    if (!server) throw new UnknownServerError(id);
+    if (server.name !== name || server.customName !== name) {
+      server.name = name;
+      server.customName = name;
+      this.emit('change');
+    }
+    return server;
   }
 
   /** Drop entries whose client process is gone. */

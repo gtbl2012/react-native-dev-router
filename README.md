@@ -30,6 +30,10 @@ react-native-dev-router start --reset-cache   # 第二个项目：分到 10002�
 react-native-dev-router start -n agent-fix-login   # 给 session 命名（菜单栏/status 中显示），
                                                    # 适合多个 coding agent 各起一个 session
 
+react-native-dev-router rename fix-login-flow      # 事后改名：在项目目录内直接改
+react-native-dev-router rename foo --id 12345      # 或用 start 输出里提示的 --id 精确指定
+                                                   # （同目录多 session 时必须用 --id / --port）
+
 react-native-dev-router runner status         # 查看 runner 和所有已注册 server
 react-native-dev-router runner stop           # 停 runner（不影响已在跑的 Metro）
 react-native-dev-router runner restart

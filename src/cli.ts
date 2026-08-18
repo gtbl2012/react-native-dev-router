@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { Command, InvalidArgumentError } from 'commander';
 import { startCommand } from './start.js';
-import { runnerStart, runnerStop, runnerRestart, runnerStatus } from './runner-cmd.js';
+import { runnerStart, runnerStop, runnerRestart, runnerStatus, renameCommand } from './runner-cmd.js';
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
 
@@ -62,6 +62,24 @@ export async function main(argv: string[]): Promise<void> {
         sessionName: name === undefined || name === '' ? null : name,
         rest: stripPassthroughSeparator(reactNativeArgs),
       });
+    });
+
+  program
+    .command('rename')
+    .description('Rename a running dev server session (as shown in the menu bar and `runner status`).')
+    .argument('<newName>', 'new session display name', (raw: string): string => {
+      const trimmed = raw.trim();
+      if (trimmed === '') throw new InvalidArgumentError('must not be empty');
+      return trimmed;
+    })
+    .option('--id <id>', 'target session id (the start client pid, printed by `start`)')
+    .option('--port <port>', 'target the session running on this Metro port', parsePort)
+    .addHelpText(
+      'after',
+      '\nWithout --id/--port the session started from the current directory is renamed.',
+    )
+    .action(async (newName: string, opts: { id?: string; port?: number }): Promise<void> => {
+      await renameCommand(newName, opts);
     });
 
   const runner = program
