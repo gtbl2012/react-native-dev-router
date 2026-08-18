@@ -4,12 +4,21 @@ import { type RegisterResult, type ServersInfo } from './types.js';
 import { findFreePort, findReactNativeBin, projectName } from './util.js';
 import { ensureRunner, api, ApiError } from './runner-client.js';
 
+export interface StartInvocation {
+  /** --port/-p: user-chosen Metro port (skips free-port detection). */
+  userPort: number | null;
+  /** -n/--name: session display name override (menu bar + runner status). */
+  sessionName: string | null;
+  /** Remaining args, passed through to `react-native start` verbatim. */
+  rest: string[];
+}
+
 /**
  * `react-native-dev-router start [...args]`
  * Ensures the global runner is up, picks a free port after 10000, registers,
  * then runs the project-local `react-native start --port <port> [...args]`.
  */
-export async function startCommand(args: string[]): Promise<void> {
+export async function startCommand(inv: StartInvocation): Promise<void> {
   const cwd = process.cwd();
   const rnBin = findReactNativeBin(cwd);
   if (rnBin === null) {
@@ -20,7 +29,7 @@ export async function startCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  const { userPort, sessionName, rest } = parseStartArgs(args);
+  const { userPort, sessionName, rest } = inv;
   const name = sessionName ?? projectName(cwd);
 
   const { info, spawned } = await ensureRunner();
@@ -105,48 +114,3 @@ export async function startCommand(args: string[]): Promise<void> {
   });
 }
 
-interface StartArgs {
-  userPort: number | null;
-  /** -n/--name: session display name override (menu bar + runner status). */
-  sessionName: string | null;
-  /** Everything else, passed through to `react-native start`. */
-  rest: string[];
-}
-
-/**
- * Consume the options that belong to this tool (--port/-p to honor a
- * user-chosen port, -n/--name to label the session — useful when several
- * coding agents run sessions of the same project); pass the rest through.
- */
-function parseStartArgs(args: string[]): StartArgs {
-  const rest: string[] = [];
-  let userPort: number | null = null;
-  let sessionName: string | null = null;
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === undefined) break;
-    if (arg === '--port' || arg === '-p') {
-      userPort = toPort(args[++i]);
-    } else if (arg.startsWith('--port=')) {
-      userPort = toPort(arg.slice('--port='.length));
-    } else if (arg === '--name' || arg === '-n') {
-      sessionName = toSessionName(args[++i]);
-    } else if (arg.startsWith('--name=')) {
-      sessionName = toSessionName(arg.slice('--name='.length));
-    } else {
-      rest.push(arg);
-    }
-  }
-  return { userPort, sessionName, rest };
-}
-
-function toSessionName(raw: string | undefined): string | null {
-  const trimmed = raw?.trim() ?? '';
-  return trimmed === '' ? null : trimmed;
-}
-
-function toPort(raw: string | undefined): number | null {
-  if (raw === undefined) return null;
-  const parsed = Number.parseInt(raw, 10);
-  return Number.isNaN(parsed) || parsed <= 0 || parsed > 65_535 ? null : parsed;
-}

@@ -3,41 +3,23 @@ import { type ServersInfo } from './types.js';
 import { api, ensureRunner, ping } from './runner-client.js';
 import { delay } from './util.js';
 
-/** `react-native-dev-router runner <start|stop|restart|status>` */
-export async function runnerCommand(args: string[]): Promise<void> {
-  const sub = args[0];
-  switch (sub) {
-    case 'start':
-      await start();
-      return;
-    case 'stop':
-      await stop();
-      return;
-    case 'restart':
-      await stop();
-      await start();
-      return;
-    case 'status':
-    case undefined:
-      await status();
-      return;
-    default:
-      console.error(`Unknown runner subcommand: ${sub}\nUsage: react-native-dev-router runner <start|stop|restart|status>`);
-      process.exit(1);
-  }
-}
-
-async function start(): Promise<void> {
+/** `runner start` — start the daemon if it is not already running. */
+export async function runnerStart(): Promise<void> {
   const existing = await ping();
   if (existing) {
-    console.log(`Runner already running (pid ${String(existing.pid)}, control :${String(existing.runnerPort)}, proxy :${String(existing.proxyPort)})`);
+    console.log(
+      `Runner already running (pid ${String(existing.pid)}, control :${String(existing.runnerPort)}, proxy :${String(existing.proxyPort)})`,
+    );
     return;
   }
   const { info } = await ensureRunner();
-  console.log(`Runner started (pid ${String(info.pid)}, control :${String(info.runnerPort)}, proxy :${String(info.proxyPort)})`);
+  console.log(
+    `Runner started (pid ${String(info.pid)}, control :${String(info.runnerPort)}, proxy :${String(info.proxyPort)})`,
+  );
 }
 
-async function stop(): Promise<void> {
+/** `runner stop` — stop the daemon; registered dev servers keep running. */
+export async function runnerStop(): Promise<void> {
   const existing = await ping();
   if (!existing) {
     console.log('Runner is not running.');
@@ -60,7 +42,14 @@ async function stop(): Promise<void> {
   throw new Error('Runner did not stop within 5s');
 }
 
-async function status(): Promise<void> {
+/** `runner restart` */
+export async function runnerRestart(): Promise<void> {
+  await runnerStop();
+  await runnerStart();
+}
+
+/** `runner status` — show the runner and all registered dev servers. */
+export async function runnerStatus(): Promise<void> {
   const info = await ping();
   if (!info) {
     console.log(`Runner is not running. Proxy :${String(PROXY_PORT)} is not managed.`);

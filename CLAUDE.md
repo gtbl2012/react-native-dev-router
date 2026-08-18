@@ -19,6 +19,14 @@ react-native-dev-router runner start|stop|restart|status
 默认取项目 package.json 的 name；给 coding agent 区分同项目多 session 用）。其余参数
 原样透传给 `react-native start`。
 
+CLI 用 commander（`src/cli.ts`）。透传的实现要点：`start` 子命令开了
+`.allowUnknownOption()` + 变长 `[reactNativeArgs...]`，未知 token（含「选项 值」对）
+按原顺序落入 args；已知选项（`-n`/`-p`）在任意位置都会被摘出消费。**不要加
+`.passThroughOptions()`**——那会让写在未知参数之后的 `-n` 被透传而不是被消费。
+commander 会把字面 `--` 留在 args 里，`stripPassthroughSeparator()` 剥掉第一个，
+所以 `start -- --port 12345` 能把 `--port` 真正交给 react-native。改动透传逻辑后
+务必手测：`start --reset-cache -n x --max-workers 4 -- --sourceExts ts`。
+
 ## 开发命令
 
 ```bash
