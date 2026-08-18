@@ -109,6 +109,9 @@ start 客户端 (每个项目一个)                 runner 守护进程 (全局
   （见 `node_modules/glimpseui/README.md`）先补声明。
 - 错误处理用 `util.ts` 的 `errMsg()/errCode()` 收窄 unknown；跨进程错误用具名 Error 子类
   （`ApiError`、`PortTakenError`、`UnknownServerError`），control-api 靠 instanceof 映射状态码。
+- README 双语：`README.md`（英文，npm 主页展示）+ `README.zh-CN.md`（中文），改一份要同步
+  另一份；互链用 GitHub 绝对 URL（npm 页面上相对链接会失效）。npm 页面的 README 在下次
+  发版时才会更新。
 
 ## 手动测试（无需真实 RN 项目）
 

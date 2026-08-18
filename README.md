@@ -1,49 +1,121 @@
 # react-native-dev-router
 
-同时开发多个 React Native 项目时的 Metro 路由器（macOS）。
+[![npm version](https://img.shields.io/npm/v/react-native-dev-router)](https://www.npmjs.com/package/react-native-dev-router)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-dev-router)](https://www.npmjs.com/package/react-native-dev-router)
+[![node](https://img.shields.io/node/v/react-native-dev-router)](https://www.npmjs.com/package/react-native-dev-router)
+[![release](https://github.com/gtbl2012/react-native-dev-router/actions/workflows/release.yml/badge.svg)](https://github.com/gtbl2012/react-native-dev-router/actions/workflows/release.yml)
+[![license](https://img.shields.io/npm/l/react-native-dev-router)](https://github.com/gtbl2012/react-native-dev-router/blob/main/LICENSE)
+![platform](https://img.shields.io/badge/platform-macOS-black)
 
-- `react-native-dev-router start`：把当前项目的 Metro 启动到 10000 之后的空闲端口，
-  参数原样透传给 `react-native start`。
-- 全局单例 **runner** 守护进程把「当前激活」的 Metro 代理到 **8081**——模拟器 / 设备
-  永远连 8081，不用改任何项目配置。
-- 菜单栏 **⚛** 指示器（基于 [glimpseui](https://github.com/hazat/glimpse)）显示所有
-  在跑的 dev server：点击一行切换路由，点 ✕ 关闭那个 server。
-- 切换过的选择会被记住，runner 或项目重启后自动恢复。
+English | [简体中文](https://github.com/gtbl2012/react-native-dev-router/blob/main/README.zh-CN.md)
 
-## 安装
+A Metro router for developing several React Native projects at the same time (macOS).
+
+- **One Metro per project** on auto-assigned ports after 10000 — no more "port 8081 already in use".
+- A **global singleton runner** daemon proxies the *active* server to **:8081**, so simulators and devices always connect to 8081 with zero per-project configuration.
+- A **⚛ menu bar indicator** lists all running dev servers: click a row to route it to 8081, click ✕ to stop one.
+- **Session naming** for coding agents: label each session at start (`-n`) or afterwards (`rename`), so several agents working on the same repo stay distinguishable.
+- The server you switched to is **remembered** across runner and project restarts.
+
+## Requirements
+
+- macOS (the menu bar indicator is macOS-only; everything else degrades gracefully headless)
+- Node.js ≥ 22.12
+- Xcode Command Line Tools (compiles the native menu bar component of [glimpseui](https://github.com/hazat/glimpse) at install time)
+
+## Install
+
+### Per project (recommended)
 
 ```bash
-npm install && npm run build
-npm link        # 得到全局 react-native-dev-router 命令
+npm install -D react-native-dev-router
 ```
 
-需要 Xcode Command Line Tools（glimpseui 编译菜单栏原生组件用）。
-
-## 使用
+```jsonc
+// package.json
+{
+  "scripts": {
+    "start": "react-native-dev-router start"
+  }
+}
+```
 
 ```bash
-cd your-rn-app
-react-native-dev-router start                 # 第一个项目：自动拉起 runner，分到 10001，路由到 8081
-cd ../another-rn-app
-react-native-dev-router start --reset-cache   # 第二个项目：分到 10002，待机；参数透传
-
-react-native-dev-router start -n agent-fix-login   # 给 session 命名（菜单栏/status 中显示），
-                                                   # 适合多个 coding agent 各起一个 session
-
-react-native-dev-router rename fix-login-flow      # 事后改名：在项目目录内直接改
-react-native-dev-router rename foo --id 12345      # 或用 start 输出里提示的 --id 精确指定
-                                                   # （同目录多 session 时必须用 --id / --port）
-
-react-native-dev-router runner status         # 查看 runner 和所有已注册 server
-react-native-dev-router runner stop           # 停 runner（不影响已在跑的 Metro）
-react-native-dev-router runner restart
+npm start                         # auto port, registered, routed to :8081 if active
+npm start -- -n fix-login-flow    # note the extra -- when passing flags through npm
 ```
 
-## 环境变量
+### Global
 
-| 变量 | 默认 | 说明 |
+```bash
+npm install -g react-native-dev-router
+cd your-rn-app && react-native-dev-router start
+```
+
+## Usage
+
+```bash
+react-native-dev-router start [options] [...react-native start args]
+  # -p, --port <port>   pick a fixed Metro port (skips free-port detection)
+  # -n, --name <name>   session display name (default: package.json name)
+  # everything else is passed through to `react-native start` in order;
+  # use `--` to force the rest through untouched
+
+react-native-dev-router rename <name> [--id <pid> | --port <port>]
+  # rename a running session; without --id/--port it targets the session
+  # started from the current directory
+
+react-native-dev-router runner [start|stop|restart|status]
+  # control the global runner daemon; bare `runner` shows status
+```
+
+Typical multi-project session:
+
+```bash
+cd app-one && react-native-dev-router start          # :10001, active, proxied at :8081
+cd ../app-two && react-native-dev-router start       # :10002, standby
+# click ⚛ in the menu bar to switch which one your simulator talks to
+```
+
+Sessions started without a name print a copy-pasteable hint like
+`react-native-dev-router rename <name> --id 12345`, so a coding agent can label
+its own session after the fact. Stopping the runner never kills your dev
+servers — they re-register automatically the next time the runner starts.
+
+## Environment variables
+
+| Variable | Default | Description |
 |---|---|---|
-| `RN_DEV_ROUTER_RUNNER_PORT` | 8790 | runner 控制 API 端口（仅 localhost） |
-| `RN_DEV_ROUTER_PROXY_PORT` | 8081 | 代理端口 |
+| `RN_DEV_ROUTER_RUNNER_PORT` | 8790 | runner control API port (localhost only) |
+| `RN_DEV_ROUTER_PROXY_PORT` | 8081 | proxy port |
 
-日志与状态在 `~/.react-native-dev-router/`。
+Logs and state live in `~/.react-native-dev-router/` (`runner.log` is the place
+to look when something is off).
+
+## How it works
+
+Each `start` invocation ensures the runner daemon is alive (spawning it detached
+if needed), probes a free port in 10001–10999, pre-registers with the runner
+(which arbitrates port collisions), then runs your project-local
+`react-native start --port <port>` with logs inherited. The runner proxies
+:8081 at the TCP level to the active server — WebSockets (HMR, inspector) pass
+through transparently, and switching flushes existing connections so clients
+reconnect to the new target. Clients re-register every few seconds, so the
+registry rebuilds itself after a runner restart with no recovery logic.
+
+## Development
+
+```bash
+npm install
+npm run build       # tsc -> dist/
+npm run check       # typecheck + lint
+node dist/bin.js …  # run the CLI from source
+```
+
+Releases: bump the version on `main`, merge to the `release` branch, and push —
+GitHub Actions publishes to npm via [trusted publishing](https://docs.npmjs.com/trusted-publishers)
+(with provenance), tags `v{version}`, and creates a GitHub Release.
+
+## License
+
+[MIT](https://github.com/gtbl2012/react-native-dev-router/blob/main/LICENSE)
